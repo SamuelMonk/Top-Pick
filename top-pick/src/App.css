@@ -128,7 +128,8 @@
 }
 
 .add-player-button,
-.remove-player-button {
+.remove-player-button,
+.continue-button {
   border: none;
   border-radius: 999px;
   padding: 0.8rem 1.2rem;
@@ -148,8 +149,39 @@
   background: #c0392b;
 }
 
+.continue-button {
+  color: #07111f;
+  background: #4ade80;
+}
+
 .add-player-button:hover,
-.remove-player-button:hover {
+.remove-player-button:hover,
+.continue-button:hover {
+  transform: translateY(-1px);
+}
+
+.blank-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #07111f 0%, #11243d 48%, #1e3a5f 100%);
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #07111f;
+  background: #f8d64e;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+}
+
+.back-button:hover {
   transform: translateY(-1px);
 }
 

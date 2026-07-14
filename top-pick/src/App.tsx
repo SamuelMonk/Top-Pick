@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import BlankPage from './BlankPage'
 import arsenalLogo from './assets/PremLogos/arsenal-fc-logo-brandlogos.net_dg0swy04j.svg'
 import manCityLogo from './assets/PremLogos/manchester-city-fc-logo-TitlM7Ic_brandlogos.net.svg'
 import chelseaLogo from './assets/PremLogos/chelsea-fc-logo-brandlogos.net_p77lkji67.svg'
@@ -42,6 +43,7 @@ function getInitialPlayers() {
 
 function App() {
   const [players, setPlayers] = useState<string[]>(getInitialPlayers)
+  const [showBlankPage, setShowBlankPage] = useState(false)
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(players))
@@ -65,6 +67,12 @@ function App() {
     if (players.length > 1) {
       setPlayers((currentPlayers) => currentPlayers.slice(0, -1))
     }
+  }
+
+  const allPlayersFilled = players.every((player) => player.trim().length > 0)
+
+  if (showBlankPage) {
+    return <BlankPage onBack={() => setShowBlankPage(false)} />
   }
 
   return (
@@ -130,6 +138,12 @@ function App() {
             </button>
           )}
         </div>
+
+        {allPlayersFilled && (
+          <button type="button" className="continue-button" onClick={() => setShowBlankPage(true)}>
+            continue
+          </button>
+        )}
       </main>
     </div>
   )
