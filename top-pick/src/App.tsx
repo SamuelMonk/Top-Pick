@@ -72,7 +72,16 @@ function App() {
   const allPlayersFilled = players.every((player) => player.trim().length > 0)
 
   if (showBlankPage) {
-    return <BlankPage onBack={() => setShowBlankPage(false)} players={players} />
+    return (
+      <BlankPage
+        onBack={() => setShowBlankPage(false)}
+        players={players}
+        onQuit={() => {
+          setPlayers([''])
+          setShowBlankPage(false)
+        }}
+      />
+    )
   }
 
   return (
