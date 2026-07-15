@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import BlankPage from './BlankPage'
+import { getAvatarColor, getInitials } from './avatarUtils'
 import arsenalLogo from './assets/PremLogos/arsenal-fc-logo-brandlogos.net_dg0swy04j.svg'
 import manCityLogo from './assets/PremLogos/manchester-city-fc-logo-TitlM7Ic_brandlogos.net.svg'
 import chelseaLogo from './assets/PremLogos/chelsea-fc-logo-brandlogos.net_p77lkji67.svg'
@@ -21,45 +22,79 @@ const clubs = [
   { name: 'Newcastle United', logo: newcastleLogo, top: '82%', left: '84%', rotate: '12deg', delay: '3.5s', duration: '9s', colors: ['#241F20', '#FFFFFF'] },
 ]
 
+type PlayerName = {
+  firstName: string
+  lastName: string
+}
+
 const STORAGE_KEY = 'top-pick-players'
 
 function getInitialPlayers() {
   if (typeof window === 'undefined') {
-    return ['']
+    return [{ firstName: '', lastName: '' }]
   }
 
   try {
     const storedPlayers = window.localStorage.getItem(STORAGE_KEY)
     if (!storedPlayers) {
-      return ['']
+      return [{ firstName: '', lastName: '' }]
     }
 
     const parsedPlayers = JSON.parse(storedPlayers)
-    return Array.isArray(parsedPlayers) && parsedPlayers.length > 0 ? parsedPlayers : ['']
+    if (!Array.isArray(parsedPlayers) || parsedPlayers.length === 0) {
+      return [{ firstName: '', lastName: '' }]
+    }
+
+    return parsedPlayers.map((player: unknown) => {
+      if (typeof player === 'string') {
+        const [firstName, ...rest] = player.trim().split(/\s+/)
+        return {
+          firstName: firstName ?? '',
+          lastName: rest.join(' ') ?? '',
+        }
+      }
+
+      if (
+        typeof player === 'object' &&
+        player !== null &&
+        'firstName' in player &&
+        'lastName' in player
+      ) {
+        return {
+          firstName: String((player as any).firstName ?? ''),
+          lastName: String((player as any).lastName ?? ''),
+        }
+      }
+
+      return { firstName: '', lastName: '' }
+    })
   } catch {
-    return ['']
+    return [{ firstName: '', lastName: '' }]
   }
 }
 
 function App() {
-  const [players, setPlayers] = useState<string[]>(getInitialPlayers)
+  const [players, setPlayers] = useState<PlayerName[]>(getInitialPlayers)
   const [showBlankPage, setShowBlankPage] = useState(false)
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(players))
   }, [players])
 
-  const handlePlayerChange = (index: number, value: string) => {
+  const handlePlayerChange = (index: number, field: keyof PlayerName, value: string) => {
     setPlayers((currentPlayers) => {
       const nextPlayers = [...currentPlayers]
-      nextPlayers[index] = value
+      nextPlayers[index] = {
+        ...nextPlayers[index],
+        [field]: value,
+      }
       return nextPlayers
     })
   }
 
   const handleAddPlayer = () => {
-    if (players.length < 4) {
-      setPlayers((currentPlayers) => [...currentPlayers, ''])
+    if (players.length < 8) {
+      setPlayers((currentPlayers) => [...currentPlayers, { firstName: '', lastName: '' }])
     }
   }
 
@@ -69,15 +104,24 @@ function App() {
     }
   }
 
-  const allPlayersFilled = players.every((player) => player.trim().length > 0)
+  const isValidPlayerName = (player: PlayerName) => {
+    return player.firstName.trim().length > 0 && player.lastName.trim().length > 0
+  }
+
+  const allPlayersFilled = players.every(isValidPlayerName)
 
   if (showBlankPage) {
+    const playerNumbers = Object.fromEntries(
+      players.map((player, index) => [`${player.firstName} ${player.lastName}`, index + 1]),
+    )
+
     return (
       <BlankPage
         onBack={() => setShowBlankPage(false)}
-        players={players}
+        players={players.map((player) => `${player.firstName} ${player.lastName}`)}
+        playerNumbers={playerNumbers}
         onQuit={() => {
-          setPlayers([''])
+          setPlayers([{ firstName: '', lastName: '' }])
           setShowBlankPage(false)
         }}
       />
@@ -105,37 +149,57 @@ function App() {
         ))}
       </div>
 
+      <header className="landing-header">
+        <h1>Top-Pick</h1>
+        <p className="landing-subheader">The ultimate football prediction game</p>
+      </header>
+
       <main className="intro-panel">
         <div className="player-list">
           {players.map((playerName, index) => (
             <div className="player-row" key={`player-${index}`}>
-              <div className={`avatar-circle${index === 0 ? '' : ' avatar-circle-small'}`} aria-hidden="true">
-                <svg viewBox="0 0 64 64" role="img" focusable="false">
-                  <circle cx="32" cy="32" r="30" fill="rgba(255,255,255,0.16)" />
-                  <circle cx="32" cy="24" r="10" fill="#fdf7e8" />
-                  <path
-                    d="M18 50c2-9 10-14 14-14s12 5 14 14"
-                    fill="#fdf7e8"
-                  />
-                </svg>
+              <div
+                className={`avatar-circle${index === 0 ? '' : ' avatar-circle-small'}`}
+                aria-hidden="true"
+                style={{ backgroundColor: getAvatarColor(index + 1) }}
+              >
+                <span className="avatar-initials">
+                  {getInitials(`${playerName.firstName} ${playerName.lastName}`)}
+                </span>
               </div>
 
-              <label className="username-field" htmlFor={`player-${index}`}>
-                <input
-                  id={`player-${index}`}
-                  type="text"
-                  value={playerName}
-                  onChange={(event) => handlePlayerChange(index, event.target.value)}
-                  placeholder={index === 0 ? 'enter username' : `player ${index + 1} username`}
-                  autoComplete="off"
-                />
-              </label>
+              <div className="name-inputs">
+                <label className="username-field" htmlFor={`player-${index}-first`}>
+                  <input
+                    id={`player-${index}-first`}
+                    type="text"
+                    value={playerName.firstName}
+                    onChange={(event) => handlePlayerChange(index, 'firstName', event.target.value)}
+                    placeholder="first name"
+                    autoComplete="off"
+                  />
+                </label>
+                <label className="username-field" htmlFor={`player-${index}-last`}>
+                  <input
+                    id={`player-${index}-last`}
+                    type="text"
+                    value={playerName.lastName}
+                    onChange={(event) => handlePlayerChange(index, 'lastName', event.target.value)}
+                    placeholder="surname"
+                    autoComplete="off"
+                  />
+                </label>
+              </div>
+              {!isValidPlayerName(playerName) &&
+                (playerName.firstName.trim().length > 0 || playerName.lastName.trim().length > 0) && (
+                  <div className="username-hint">Please enter first name and surname.</div>
+                )}
             </div>
           ))}
         </div>
 
         <div className="action-buttons">
-          {players.length < 4 && (
+          {players.length < 8 && (
             <button type="button" className="add-player-button" onClick={handleAddPlayer}>
               add a player
             </button>

@@ -1,5 +1,7 @@
+import { useMemo, useState } from 'react'
 import './App.css'
 import fixtureData from './dataSource/en.1.json'
+import { getAvatarColor, getInitials } from './avatarUtils'
 
 type Match = {
   round: string
@@ -17,19 +19,66 @@ type PlayerRecord = {
 }
 
 type FinalAnswerPageProps = {
+  currentWeek: number
   onBack: () => void
+  onQuit: () => void
+  onNextGameweek: () => void
+  onFinish: () => void
   playerRecords: Record<string, PlayerRecord>
+  playerNumbers: Record<string, number>
 }
 
-const CURRENT_WEEK = 'Gameweek 1'
+function FinalAnswerPage({
+  currentWeek,
+  onBack,
+  onQuit,
+  onNextGameweek,
+  onFinish,
+  playerRecords,
+  playerNumbers,
+}: FinalAnswerPageProps) {
+  const [isQuitConfirmOpen, setIsQuitConfirmOpen] = useState(false)
+  const currentWeekLabel = `Gameweek ${currentWeek}`
+  const currentRoundLabel = `Matchday ${currentWeek}`
 
-function FinalAnswerPage({ onBack, playerRecords }: FinalAnswerPageProps) {
-  const matchdayOneMatches = (fixtureData.matches as Match[]).filter(
-    (match) => match.round === 'Matchday 1',
+  const weeklyMatches = (fixtureData.matches as Match[]).filter(
+    (match) => match.round === currentRoundLabel,
+  )
+
+  const handleQuitConfirm = (confirmed: boolean) => {
+    if (confirmed) {
+      onQuit()
+    } else {
+      setIsQuitConfirmOpen(false)
+    }
+  }
+
+  const lightningStrikes = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, index) => ({
+        id: `strike-${index}`,
+        left: `${10 + Math.random() * 80}%`,
+        delay: `${Math.random() * 8}s`,
+        duration: `${0.8 + Math.random() * 0.7}s`,
+      })),
+    [],
   )
 
   return (
     <div className="blank-page final-answer-page" aria-label="final answer page">
+      <div className="lightning-layer">
+        {lightningStrikes.map((strike) => (
+          <span
+            key={strike.id}
+            className="lightning-strike"
+            style={{
+              left: strike.left,
+              animationDelay: strike.delay,
+              animationDuration: strike.duration,
+            }}
+          />
+        ))}
+      </div>
       <aside className="top-sidebar">
         <div className="sidebar-section">
           <div className="sidebar-title">Player scores</div>
@@ -40,11 +89,15 @@ function FinalAnswerPage({ onBack, playerRecords }: FinalAnswerPageProps) {
                 .map(([player, record]) => (
                   <li className="sidebar-score-item" key={player}>
                     <div className="sidebar-player">
-                      <span className="sidebar-avatar">👤</span>
+                      <span
+                        className="sidebar-avatar"
+                        style={{ backgroundColor: getAvatarColor(playerNumbers[player] ?? 1) }}
+                      >
+                        {getInitials(player)}
+                      </span>
                       <div>
-                        <div className="sidebar-player-name">{player}</div>
                         <div className="sidebar-player-subtitle">
-                          {record.picks[CURRENT_WEEK] ? record.picks[CURRENT_WEEK] : 'No pick'}
+                          {record.picks[currentWeekLabel] ? record.picks[currentWeekLabel] : 'No pick'}
                         </div>
                       </div>
                     </div>
@@ -63,12 +116,12 @@ function FinalAnswerPage({ onBack, playerRecords }: FinalAnswerPageProps) {
         <h1>Answers!</h1>
       </header>
         <div className="fixture-header">
-          <h1>Gameweek 1</h1>
-          <p>Review the Matchday 1 fixtures and the points earned from your selections.</p>
+          <h1>{currentWeekLabel}</h1>
+          <p>Review the {currentRoundLabel} fixtures and the points earned from your selections.</p>
         </div>
 
         <div className="fixture-grid">
-          {matchdayOneMatches.map((match, index) => {
+          {weeklyMatches.map((match, index) => {
             const outcome = getFullTimeScore(match.score)
             const scoreText = outcome ? `${outcome[0]} - ${outcome[1]}` : 'TBD'
 
@@ -87,9 +140,37 @@ function FinalAnswerPage({ onBack, playerRecords }: FinalAnswerPageProps) {
         </div>
       </div>
 
+      <button type="button" className="quit-game-button" onClick={() => setIsQuitConfirmOpen(true)}>
+        quit game
+      </button>
       <button type="button" className="back-button" onClick={onBack}>
         back
       </button>
+      {currentWeek < 38 ? (
+        <button type="button" className="next-gameweek-button" onClick={onNextGameweek}>
+          next gameweek
+        </button>
+      ) : (
+        <button type="button" className="next-gameweek-button" onClick={onFinish}>
+          finish
+        </button>
+      )}
+
+      {isQuitConfirmOpen && (
+        <div className="confirm-overlay" role="dialog" aria-modal="true">
+          <div className="confirm-card">
+            <h3>Are you sure you want to quit?</h3>
+            <div className="confirm-actions">
+              <button type="button" className="confirm-yes" onClick={() => handleQuitConfirm(true)}>
+                yes
+              </button>
+              <button type="button" className="confirm-no" onClick={() => handleQuitConfirm(false)}>
+                no
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
