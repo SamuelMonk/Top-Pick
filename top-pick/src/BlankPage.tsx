@@ -140,15 +140,32 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
     new Set(weeklyMatches.flatMap((match) => [match.team1, match.team2])),
   ).sort((a, b) => a.localeCompare(b))
 
+  const parseWeekNumber = (weekLabel: string) => {
+    const match = weekLabel.match(/Gameweek\s*(\d+)/i)
+    return match ? Number(match[1]) : null
+  }
+
+  const isSameSeasonHalf = (weekNumber: number, currentWeekNumber: number) =>
+    currentWeekNumber <= 20 ? weekNumber <= 20 : weekNumber >= 21
+
   const getUsedTeamsForPlayer = (player: string) => {
     const playerRecord = playerRecords[player]
     if (!playerRecord) {
       return new Set<string>()
     }
 
+    const currentWeekNumber = parseWeekNumber(currentWeekLabel)
     return new Set(
       Object.entries(playerRecord.picks)
-        .filter(([weekLabel]) => weekLabel !== currentWeekLabel)
+        .filter(([weekLabel]) => {
+          const weekNumber = parseWeekNumber(weekLabel)
+          return (
+            weekLabel !== currentWeekLabel &&
+            weekNumber !== null &&
+            currentWeekNumber !== null &&
+            isSameSeasonHalf(weekNumber, currentWeekNumber)
+          )
+        })
         .map(([, team]) => team),
     )
   }
