@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import fixtureData from './dataSource/en.1.json'
 import FinalAnswerPage from './FinalAnswerPage'
@@ -15,9 +15,77 @@ type Match = {
   time: string
   team1: string
   team2: string
+  score?: unknown
+}
+
+type PlayerRecord = {
+  picks: Record<string, string>
+  pointsByWeek: Record<string, number>
+  totalPoints: number
 }
 
 const PICKS_STORAGE_KEY = 'top-pick-gameweek-1-picks'
+const PLAYER_RECORDS_STORAGE_KEY = 'top-pick-player-records'
+const CURRENT_WEEK = 'Gameweek 1'
+
+function getFullTimeScore(score: unknown): [number, number] | null {
+  if (Array.isArray(score) && score.length >= 2) {
+    return [Number(score[0]), Number(score[1])]
+  }
+
+  if (typeof score === 'object' && score !== null && 'ft' in score) {
+    const ft = (score as any).ft
+    if (Array.isArray(ft) && ft.length >= 2) {
+      return [Number(ft[0]), Number(ft[1])]
+    }
+  }
+
+  return null
+}
+
+function getMatchOutcome(match: Match) {
+  const score = getFullTimeScore(match.score)
+  if (!score) {
+    return null
+  }
+
+  const [home, away] = score
+  if (home === away) {
+    return { home, away, result: 'draw' as const, scoreText: `${home} - ${away}` }
+  }
+
+  return {
+    home,
+    away,
+    result: home > away ? 'home' as const : 'away' as const,
+    scoreText: `${home} - ${away}`,
+  }
+}
+
+function computePlayerPoints(playerTeam: string, match: Match) {
+  if (!playerTeam || (playerTeam !== match.team1 && playerTeam !== match.team2)) {
+    return 0
+  }
+
+  const outcome = getMatchOutcome(match)
+  if (!outcome) {
+    return 0
+  }
+
+  if (outcome.result === 'draw') {
+    return 1
+  }
+
+  if (playerTeam === match.team1 && outcome.result === 'home') {
+    return 3
+  }
+
+  if (playerTeam === match.team2 && outcome.result === 'away') {
+    return 3
+  }
+
+  return 0
+}
 
 function BlankPage({ onBack, players, onQuit }: BlankPageProps) {
   const matchdayOneMatches = (fixtureData.matches as Match[]).filter(
@@ -49,34 +117,34 @@ function BlankPage({ onBack, players, onQuit }: BlankPageProps) {
     }
   })
 
-  const [isLeftMenuOpen, setIsLeftMenuOpen] = useState(false)
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
+  const [playerRecords, setPlayerRecords] = useState<Record<string, PlayerRecord>>(() => {
+    if (typeof window === 'undefined') {
+      return {}
+    }
+
+    try {
+      const stored = window.localStorage.getItem(PLAYER_RECORDS_STORAGE_KEY)
+      if (!stored) {
+        return {}
+      }
+
+      const parsed = JSON.parse(stored)
+      return typeof parsed === 'object' && parsed !== null ? parsed : {}
+    } catch {
+      return {}
+    }
+  })
+
   const [isQuitConfirmOpen, setIsQuitConfirmOpen] = useState(false)
   const [showFinalAnswerPage, setShowFinalAnswerPage] = useState(false)
-  const leftMenuRef = useRef<HTMLDivElement>(null)
-  const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     window.localStorage.setItem(PICKS_STORAGE_KEY, JSON.stringify(selections))
   }, [selections])
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (leftMenuRef.current && !leftMenuRef.current.contains(event.target as Node)) {
-        setIsLeftMenuOpen(false)
-      }
-
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+    window.localStorage.setItem(PLAYER_RECORDS_STORAGE_KEY, JSON.stringify(playerRecords))
+  }, [playerRecords])
 
   const handleSelectionChange = (playerName: string, teamName: string) => {
     setSelections((currentSelections) => ({
@@ -86,23 +154,55 @@ function BlankPage({ onBack, players, onQuit }: BlankPageProps) {
   }
 
   const leaderboardEntries = activePlayers
-    .map((player) => ({
-      name: player,
-      points: Object.values(selections).filter((selection) => selection === player).length,
-    }))
+    .map((player) => {
+      const record = playerRecords[player]
+      return {
+        name: player,
+        points: record ? record.totalPoints : 0,
+      }
+    })
     .sort((a, b) => b.points - a.points)
 
-  const handleMenuAction = (action: 'leaderboard' | 'quit') => {
-    if (action === 'leaderboard') {
-      setIsLeaderboardOpen((open) => !open)
-    } else {
-      setIsQuitConfirmOpen(true)
-    }
-    setIsLeftMenuOpen(false)
+  const lockInFinalAnswers = () => {
+    const updatedRecords = { ...playerRecords }
+
+    activePlayers.forEach((player) => {
+      const playerTeam = selections[player] ?? ''
+      const existingRecord = updatedRecords[player] ?? {
+        picks: {},
+        pointsByWeek: {},
+        totalPoints: 0,
+      }
+
+      const previousWeekPoints = existingRecord.pointsByWeek[CURRENT_WEEK] ?? 0
+      const weekPoints = matchdayOneMatches.reduce((sum, match) => {
+        return sum + computePlayerPoints(playerTeam, match)
+      }, 0)
+
+      updatedRecords[player] = {
+        picks: {
+          ...existingRecord.picks,
+          [CURRENT_WEEK]: playerTeam,
+        },
+        pointsByWeek: {
+          ...existingRecord.pointsByWeek,
+          [CURRENT_WEEK]: weekPoints,
+        },
+        totalPoints: existingRecord.totalPoints - previousWeekPoints + weekPoints,
+      }
+    })
+
+    setPlayerRecords(updatedRecords)
+    setShowFinalAnswerPage(true)
   }
 
   const handleQuitConfirm = (confirmed: boolean) => {
     if (confirmed) {
+      window.localStorage.removeItem(PICKS_STORAGE_KEY)
+      window.localStorage.removeItem(PLAYER_RECORDS_STORAGE_KEY)
+      setSelections({})
+      setPlayerRecords({})
+      setShowFinalAnswerPage(false)
       onQuit()
     } else {
       setIsQuitConfirmOpen(false)
@@ -110,62 +210,45 @@ function BlankPage({ onBack, players, onQuit }: BlankPageProps) {
   }
 
   if (showFinalAnswerPage) {
-    return <FinalAnswerPage onBack={() => setShowFinalAnswerPage(false)} />
+    return (
+      <FinalAnswerPage
+        onBack={() => setShowFinalAnswerPage(false)}
+        playerRecords={playerRecords}
+      />
+    )
   }
 
   return (
     <div className="blank-page" aria-label="blank page">
-      <div className="left-menu" ref={leftMenuRef}>
-        <button type="button" className="left-menu-trigger" onClick={() => setIsLeftMenuOpen((open) => !open)}>
-          ☰
-        </button>
-
-        {isLeftMenuOpen && (
-          <div className="left-menu-dropdown">
-            <button type="button" className="menu-action" onClick={() => handleMenuAction('leaderboard')}>
-              leaderboard
-            </button>
-            <button type="button" className="menu-action quit-action" onClick={() => handleMenuAction('quit')}>
-              quit game
-            </button>
-          </div>
-        )}
-
-        {isLeaderboardOpen && (
-          <div className="leaderboard-panel">
-            <h3>Leaderboard</h3>
-            <ul>
-              {leaderboardEntries.map((entry, index) => (
-                <li key={entry.name}>
-                  <span>{index + 1}. {entry.name}</span>
+      <aside className="top-sidebar">
+        <div className="sidebar-section">
+          <div className="sidebar-title">Player scores</div>
+          <ul className="sidebar-list">
+            {leaderboardEntries.length > 0 ? (
+              leaderboardEntries.map((entry) => (
+                <li className="sidebar-score-item" key={entry.name}>
+                  <div className="sidebar-player">
+                    <span className="sidebar-avatar">👤</span>
+                    <div>
+                      <div className="sidebar-player-name">{entry.name}</div>
+                      <div className="sidebar-player-subtitle">
+                        {selections[entry.name] ? 'Pick saved' : 'No pick yet'}
+                      </div>
+                    </div>
+                  </div>
                   <strong>{entry.points} pts</strong>
                 </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      <div className="user-menu" ref={userMenuRef}>
-        <button type="button" className="user-menu-trigger" onClick={() => setIsUserMenuOpen((open) => !open)}>
-          <span className="user-menu-icon">👤</span>
-        </button>
-
-        {isUserMenuOpen && (
-          <div className="user-menu-dropdown">
-            {activePlayers.length > 0 ? (
-              activePlayers.map((player) => (
-                <div className="user-menu-item" key={player}>
-                  <span className="user-menu-avatar">👤</span>
-                  <span>{player}</span>
-                </div>
               ))
             ) : (
-              <div className="user-menu-item">No players added</div>
+              <li className="sidebar-score-item sidebar-empty">No players added</li>
             )}
-          </div>
-        )}
-      </div>
+          </ul>
+        </div>
+
+        <button type="button" className="sidebar-quit-button" onClick={() => setIsQuitConfirmOpen(true)}>
+          quit game
+        </button>
+      </aside>
 
       <div className="fixture-page">
         <div className="fixture-header">
@@ -230,7 +313,7 @@ function BlankPage({ onBack, players, onQuit }: BlankPageProps) {
         back
       </button>
 
-      <button type="button" className="final-answer-button" onClick={() => setShowFinalAnswerPage(true)}>
+      <button type="button" className="final-answer-button" onClick={lockInFinalAnswers}>
         final answer
       </button>
     </div>
