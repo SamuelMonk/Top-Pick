@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import './App.css'
 import BlankPage from './BlankPage'
 import { getAvatarColor, getInitials } from './avatarUtils'
@@ -17,7 +17,7 @@ const clubs = [
   { name: 'Chelsea', logo: chelseaLogo, top: '28%', left: '20%', rotate: '-8deg', delay: '2s', duration: '8s', colors: ['#034694', '#FFFFFF'] },
   { name: 'Liverpool', logo: liverpoolLogo, top: '38%', left: '85%', rotate: '10deg', delay: '3s', duration: '11s', colors: ['#C8102E', '#00B2A9'] },
   { name: 'Manchester United', logo: manUnitedLogo, top: '54%', left: '10%', rotate: '-16deg', delay: '1.5s', duration: '9s', colors: ['#DA020E', '#FFE500'] },
-  { name: 'Tottenham Hotspur', logo: spursLogo, top: '62%', left: '78%', rotate: '18deg', delay: '4s', duration: '10s', colors: ['#132257', '#FFFFFF'] },
+  { name: 'Tottenham Hotspur', logo: spursLogo, top: '60%', left: '78%', rotate: '18deg', delay: '4s', duration: '10s', colors: ['#132257', '#FFFFFF'] },
   { name: 'Aston Villa', logo: astonVillaLogo, top: '76%', left: '14%', rotate: '-10deg', delay: '2.5s', duration: '8s', colors: ['#670E36', '#95BFE5'] },
   { name: 'Newcastle United', logo: newcastleLogo, top: '82%', left: '84%', rotate: '12deg', delay: '3.5s', duration: '9s', colors: ['#241F20', '#FFFFFF'] },
 ]
@@ -28,6 +28,10 @@ type PlayerName = {
 }
 
 const STORAGE_KEY = 'top-pick-players'
+
+type ClubBadgeStyle = CSSProperties & {
+  '--badge-rotation': string
+}
 
 function getInitialPlayers() {
   if (typeof window === 'undefined') {
@@ -142,11 +146,11 @@ function App() {
             style={{
               top: club.top,
               left: club.left,
-              transform: `rotate(${club.rotate})`,
+              '--badge-rotation': club.rotate,
               background: `linear-gradient(135deg, ${club.colors[0]}, ${club.colors[1]})`,
               animationDelay: club.delay,
               animationDuration: club.duration,
-            }}
+            } as ClubBadgeStyle}
           >
             <img src={club.logo} alt={`${club.name} logo`} />
           </div>
@@ -163,7 +167,7 @@ function App() {
           {players.map((playerName, index) => (
             <div className="player-row" key={`player-${index}`}>
               <div
-                className={`avatar-circle${index === 0 ? '' : ' avatar-circle-small'}`}
+                className="avatar-circle-small"
                 aria-hidden="true"
                 style={{ backgroundColor: getAvatarColor(index + 1) }}
               >
@@ -179,7 +183,7 @@ function App() {
                     type="text"
                     value={playerName.firstName}
                     onChange={(event) => handlePlayerChange(index, 'firstName', event.target.value)}
-                    placeholder="first name"
+                    placeholder="First name"
                     autoComplete="off"
                   />
                 </label>
@@ -189,7 +193,7 @@ function App() {
                     type="text"
                     value={playerName.lastName}
                     onChange={(event) => handlePlayerChange(index, 'lastName', event.target.value)}
-                    placeholder="surname"
+                    placeholder="Surname"
                     autoComplete="off"
                   />
                 </label>
@@ -205,20 +209,20 @@ function App() {
         <div className="action-buttons">
           {players.length < 8 && (
             <button type="button" className="add-player-button" onClick={handleAddPlayer}>
-              add a player
+              Add a player
             </button>
           )}
 
           {players.length > 1 && (
             <button type="button" className="remove-player-button" onClick={handleRemovePlayer}>
-              remove player
+              Remove player
             </button>
           )}
         </div>
 
         {allPlayersFilled && (
           <button type="button" className="continue-button" onClick={() => setShowBlankPage(true)}>
-            continue
+            Continue
           </button>
         )}
       </main>

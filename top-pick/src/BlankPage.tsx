@@ -679,11 +679,6 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
             <h2 style={{ margin: '0 0 16px 0', fontSize: '1.8rem', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Leaderboard
             </h2>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-              <button style={{ padding: '8px 14px', fontSize: '0.85rem', border: 'none', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.1)', color: '#f8fafc', cursor: 'pointer' }}>Today</button>
-              <button style={{ padding: '8px 14px', fontSize: '0.85rem', border: 'none', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.1)', color: '#f8fafc', cursor: 'pointer' }}>Week</button>
-              <button style={{ padding: '8px 14px', fontSize: '0.85rem', border: 'none', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.1)', color: '#f8fafc', cursor: 'pointer' }}>Month</button>
-            </div>
           </div>
 
           {/* Top 3 Players */}
@@ -808,7 +803,6 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
               fontWeight: '700',
               cursor: 'pointer',
               letterSpacing: '0.04em',
-              textTransform: 'uppercase',
             }}
           >
             Go Home
@@ -869,6 +863,10 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
             <span className="finish-confetti-piece piece-5" />
             <span className="finish-confetti-piece piece-6" />
           </div>
+        </div>
+
+        <div className="finish-copyright-notice">
+          &copy; Samuel 'CreditMonster' Monk 2026
         </div>
       </div>
     )
@@ -965,11 +963,11 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
           onClick={lockInFinalAnswers}
           disabled={!allPlayersChosen}
         >
-          submit
+          Submit
         </button>
 
         <button type="button" className="sidebar-quit-button" onClick={() => setIsFinishConfirmOpen(true)}>
-          finish and see results
+          Finish and see results
         </button>
       </aside>
 
@@ -978,13 +976,6 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
           color: weatherTheme.textColor,
           transition: 'color 0.8s ease',
         } : undefined}>
-          <div className="weather-chip" style={weatherTheme ? {
-            borderColor: `${weatherTheme.accent}66`,
-            color: weatherTheme.textColor,
-            background: `${weatherTheme.panelBackground}CC`,
-          } : undefined}>
-            {weatherTheme?.label ?? 'Seasonal forecast'} • {weatherTheme?.description ?? 'Weather theme'}
-          </div>
           <h1>{currentWeekLabel}</h1>
           <p>Pick the team you are confident will win their match out of all the games.</p>
         </div>
@@ -1010,10 +1001,10 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
             <h3>Are you sure you want to quit?</h3>
             <div className="confirm-actions">
               <button type="button" className="confirm-yes" onClick={() => handleQuitConfirm(true)}>
-                yes
+                Yes
               </button>
               <button type="button" className="confirm-no" onClick={() => handleQuitConfirm(false)}>
-                no
+                No
               </button>
             </div>
           </div>
@@ -1026,10 +1017,10 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
             <h3>Ready to finish and see results?</h3>
             <div className="confirm-actions">
               <button type="button" className="confirm-yes" onClick={() => handleFinishConfirm(true)}>
-                yes
+                Yes
               </button>
               <button type="button" className="confirm-no" onClick={() => handleFinishConfirm(false)}>
-                no
+                No
               </button>
             </div>
           </div>
@@ -1037,7 +1028,7 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
       )}
 
       <button type="button" className="back-button" onClick={handleBlankBack}>
-        back
+        Back
       </button>
     </div>
   )

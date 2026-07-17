@@ -20,8 +20,8 @@
 
 .club-badge {
   position: absolute;
-  width: 72px;
-  height: 72px;
+  width: auto;
+  height: auto;
   border-radius: 18px;
   display: grid;
   place-items: center;
@@ -38,10 +38,9 @@
 }
 
 .club-badge img {
-  width: 100%;
-  height: 100%;
+  width: 75%;
+  height: 75%;
   object-fit: contain;
-  padding: 8px;
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
 }
 
@@ -94,20 +93,22 @@
 
 .name-inputs {
   display: grid;
+  align-items: center;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  width: 100%;
+  gap: 60px;
+  width: 190%;
 }
 
 .username-field {
   width: 132px;
-  height: 132px;
+  height: 70px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(10px);
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+
 }
 
 .avatar-circle-small {
@@ -435,6 +436,18 @@
   pointer-events: none;
   overflow: hidden;
   z-index: 1;
+}
+
+.finish-copyright-notice {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  z-index: 2;
+  color: rgba(248, 250, 252, 0.86);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .finish-confetti-group {
@@ -1047,7 +1060,7 @@
 .back-button {
   position: absolute;
   left: 24px;
-  bottom: 24px;
+  bottom: 1200px;
   border: none;
   border-radius: 999px;
   padding: 0.8rem 1.1rem;
@@ -1138,7 +1151,13 @@
   100% {
     transform: translate3d(0, 0, 0) rotate(var(--badge-rotation, 0deg));
   }
+  25% {
+    transform: translate3d(4px, -8px, 0) rotate(calc(var(--badge-rotation, 0deg) - 6deg));
+  }
   50% {
-    transform: translate3d(0, -12px, 0) rotate(calc(var(--badge-rotation, 0deg) + 2deg));
+    transform: translate3d(0, -14px, 0) rotate(calc(var(--badge-rotation, 0deg) + 8deg));
+  }
+  75% {
+    transform: translate3d(-4px, -6px, 0) rotate(calc(var(--badge-rotation, 0deg) - 4deg));
   }
 }
