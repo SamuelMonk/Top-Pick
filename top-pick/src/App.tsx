@@ -41,8 +41,12 @@ function getInitialPlayers() {
     }
 
     const parsedPlayers = JSON.parse(storedPlayers)
-    if (!Array.isArray(parsedPlayers) || parsedPlayers.length === 0) {
+    if (!Array.isArray(parsedPlayers)) {
       return [{ firstName: '', lastName: '' }]
+    }
+
+    if (parsedPlayers.length === 0) {
+      return []
     }
 
     return parsedPlayers.map((player: unknown) => {
@@ -108,7 +112,7 @@ function App() {
     return player.firstName.trim().length > 0 && player.lastName.trim().length > 0
   }
 
-  const allPlayersFilled = players.every(isValidPlayerName)
+  const allPlayersFilled = players.length > 0 && players.every(isValidPlayerName)
 
   if (showBlankPage) {
     const playerNumbers = Object.fromEntries(
@@ -121,7 +125,7 @@ function App() {
         players={players.map((player) => `${player.firstName} ${player.lastName}`)}
         playerNumbers={playerNumbers}
         onQuit={() => {
-          setPlayers([{ firstName: '', lastName: '' }])
+          setPlayers([])
           setShowBlankPage(false)
         }}
       />
