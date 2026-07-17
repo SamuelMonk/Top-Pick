@@ -79,6 +79,10 @@ function FinalAnswerPage({
           />
         ))}
       </div>
+
+      <button type="button" className="back-button" onClick={onBack}>
+        Back
+      </button>
       <aside className="top-sidebar">
         <div className="sidebar-section">
           <div className="sidebar-title">Player scores</div>
@@ -109,12 +113,26 @@ function FinalAnswerPage({
             )}
           </ul>
         </div>
+
+        {currentWeek < 38 ? (
+          <button type="button" className="sidebar-submit-button" onClick={onNextGameweek}>
+            Next gameweek
+          </button>
+        ) : (
+          <button type="button" className="sidebar-submit-button" onClick={onFinish}>
+            Finish
+          </button>
+        )}
+
+        <button type="button" className="sidebar-quit-button" onClick={() => setIsQuitConfirmOpen(true)}>
+          Quit game
+        </button>
       </aside>
 
       <div className="fixture-page">
-      <header className="final-answer-header">
-        <h1>Answers!</h1>
-      </header>
+        <header className="final-answer-header">
+          <h1>Answers!</h1>
+        </header>
         <div className="fixture-header">
           <h1>{currentWeekLabel}</h1>
           <p>Review the {currentRoundLabel} fixtures and the points earned from your selections.</p>
@@ -139,22 +157,6 @@ function FinalAnswerPage({
           })}
         </div>
       </div>
-
-      <button type="button" className="quit-game-button" onClick={() => setIsQuitConfirmOpen(true)}>
-        quit game
-      </button>
-      <button type="button" className="back-button" onClick={onBack}>
-        back
-      </button>
-      {currentWeek < 38 ? (
-        <button type="button" className="next-gameweek-button" onClick={onNextGameweek}>
-          next gameweek
-        </button>
-      ) : (
-        <button type="button" className="next-gameweek-button" onClick={onFinish}>
-          finish
-        </button>
-      )}
 
       {isQuitConfirmOpen && (
         <div className="confirm-overlay" role="dialog" aria-modal="true">
