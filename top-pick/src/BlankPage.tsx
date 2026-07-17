@@ -7,6 +7,7 @@ import football1 from './assets/Footballs/football-svgrepo-com.svg'
 import football2 from './assets/Footballs/football-ball-svgrepo-com.svg'
 import football3 from './assets/Footballs/football-2-svgrepo-com.svg'
 import trophyImage from './assets/PremLeague_Trophy.png'
+import { resolveWeatherTheme, type WeatherTheme } from './WeatherThemeService'
 
 type BlankPageProps = {
   onBack: () => void
@@ -134,6 +135,7 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
   const [currentWeek, setCurrentWeek] = useState(1)
   const [currentPage, setCurrentPage] = useState<'selection' | 'finalAnswer' | 'finish'>('selection')
   const [viewHistory, setViewHistory] = useState<PageHistoryEntry[]>([])
+  const [weatherTheme, setWeatherTheme] = useState<WeatherTheme | null>(null)
   const [footballBalls, setFootballBalls] = useState<PhysicsFootball[]>(() =>
     Array.from({ length: 8 }, () => createPhysicsFootball(window.innerWidth)),
   )
@@ -295,6 +297,25 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
     (match) => match.round === currentRoundLabel,
   )
 
+  const gameweekDate = weeklyMatches[0]?.date
+
+  useEffect(() => {
+    let isActive = true
+
+    const updateWeatherTheme = async () => {
+      const nextTheme = await resolveWeatherTheme(gameweekDate)
+      if (isActive) {
+        setWeatherTheme(nextTheme)
+      }
+    }
+
+    updateWeatherTheme()
+
+    return () => {
+      isActive = false
+    }
+  }, [gameweekDate])
+
   const activePlayers = players.filter((player) => player.trim().length > 0)
 
   const availableTeams = Array.from(
@@ -436,6 +457,19 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
         delay: `${Math.random() * 3}s`,
         duration: `${1.8 + Math.random() * 1.4}s`,
         color: ['#f59e0b', '#ef4444', '#22c55e', '#60a5fa', '#a855f7'][index % 5],
+      })),
+    [],
+  )
+
+  const groundFireworks = useMemo(
+    () =>
+      Array.from({ length: 6 }, (_, index) => ({
+        id: `ground-firework-${index}`,
+        left: `${12 + Math.random() * 76}%`,
+        bottom: `${6 + Math.random() * 10}%`,
+        delay: `${Math.random() * 2.6}s`,
+        duration: `${1.4 + Math.random() * 1.2}s`,
+        color: ['#fbbf24', '#f43f5e', '#4ade80', '#60a5fa', '#c084fc'][index % 5],
       })),
     [],
   )
@@ -803,6 +837,19 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
               }}
             />
           ))}
+          {groundFireworks.map((firework) => (
+            <span
+              key={firework.id}
+              className="finish-ground-firework"
+              style={{
+                left: firework.left,
+                bottom: firework.bottom,
+                animationDelay: firework.delay,
+                animationDuration: firework.duration,
+                color: firework.color,
+              }}
+            />
+          ))}
         </div>
 
         <div className="finish-confetti-layer" aria-hidden="true">
@@ -828,7 +875,25 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
   }
 
   return (
-    <div className="blank-page" ref={containerRef} aria-label="blank page">
+    <div
+      className="blank-page"
+      ref={containerRef}
+      aria-label="blank page"
+      style={weatherTheme ? {
+        background: weatherTheme.background,
+        color: weatherTheme.textColor,
+      } : undefined}
+    >
+      <div className="weather-backdrop" style={weatherTheme ? {
+        background: weatherTheme.overlay,
+        transition: 'background 0.8s ease, filter 0.8s ease',
+      } : undefined}>
+        <div className={`weather-particles ${weatherTheme?.particleType ?? 'none'}`} aria-hidden="true">
+          {Array.from({ length: weatherTheme?.particleCount ?? 0 }, (_, index) => (
+            <span key={`${weatherTheme?.id ?? 'theme'}-${index}`} className="weather-particle" />
+          ))}
+        </div>
+      </div>
       <div className="football-background">
         {footballBalls.map((ball) => (
           <img
@@ -847,7 +912,11 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
           />
         ))}
       </div>
-      <aside className="top-sidebar">
+      <aside className="top-sidebar" style={weatherTheme ? {
+        background: weatherTheme.panelBackground,
+        color: weatherTheme.textColor,
+        transition: 'background 0.8s ease, color 0.8s ease',
+      } : undefined}>
         <div className="sidebar-section">
           <div className="sidebar-title">Players</div>
           <ul className="sidebar-list">
@@ -905,7 +974,17 @@ function BlankPage({ onBack, players, playerNumbers, onQuit }: BlankPageProps) {
       </aside>
 
       <div className="fixture-page">
-        <div className="fixture-header">
+        <div className="fixture-header" style={weatherTheme ? {
+          color: weatherTheme.textColor,
+          transition: 'color 0.8s ease',
+        } : undefined}>
+          <div className="weather-chip" style={weatherTheme ? {
+            borderColor: `${weatherTheme.accent}66`,
+            color: weatherTheme.textColor,
+            background: `${weatherTheme.panelBackground}CC`,
+          } : undefined}>
+            {weatherTheme?.label ?? 'Seasonal forecast'} • {weatherTheme?.description ?? 'Weather theme'}
+          </div>
           <h1>{currentWeekLabel}</h1>
           <p>Pick the team you are confident will win their match out of all the games.</p>
         </div>
